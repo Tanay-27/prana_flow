@@ -45,4 +45,9 @@ export class SessionsController {
   remove(@Req() req, @Param('id') id: string) {
     return this.sessionsService.delete(id, req.user._id);
   }
+
+  @Get('client/:clientId')
+  findByClient(@Req() req, @Param('clientId') clientId: string) {
+    return this.sessionsService.findByClient(req.user._id, clientId);
+  }
 }

@@ -37,6 +37,9 @@ export class Client {
   @Prop({ default: true })
   is_active: boolean;
 
+  @Prop({ default: 0 })
+  base_fee: number;
+
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', required: true })
   healer_id: MongooseSchema.Types.ObjectId;
 }

@@ -10,6 +10,7 @@ export interface Client {
   notes: { text: string; timestamp: string }[];
   protocol_ids: string[];
   is_active: boolean;
+  base_fee?: number;
 }
 
 interface ClientState {

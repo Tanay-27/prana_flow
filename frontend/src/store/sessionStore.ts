@@ -11,6 +11,7 @@ export interface Session {
   end_time: string;
   status: string;
   notes?: string;
+  fee?: number;
 }
 
 interface SessionState {
@@ -20,6 +21,7 @@ interface SessionState {
   createSessions: (data: any) => Promise<void>;
   updateSession: (id: string, data: any) => Promise<void>;
   deleteSession: (id: string) => Promise<void>;
+  fetchSessionHistory: (clientId: string) => Promise<any[]>;
 }
 
 export const useSessionStore = create<SessionState>((set, get) => ({
@@ -44,5 +46,9 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   deleteSession: async (id) => {
     await api.delete(`/sessions/${id}`);
     set({ agenda: get().agenda.filter(item => item._id !== id) });
+  },
+  fetchSessionHistory: async (clientId) => {
+    const response = await api.get(`/sessions/client/${clientId}`);
+    return response.data;
   },
 }));

@@ -16,7 +16,7 @@ export class StorageController {
     return { path, url };
   }
 
-  @Get('url/:path(*)')
+  @Get('url/*path')
   async getUrl(@Param('path') path: string) {
     const url = await this.storageService.getFileUrl(path);
     return { url };

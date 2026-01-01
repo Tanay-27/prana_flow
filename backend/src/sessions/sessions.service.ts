@@ -45,6 +45,7 @@ export class SessionsService {
           end_time: recurringData.endTime,
           status: 'scheduled',
           notes: recurringData.notes,
+          fee: (recurringData as any).fee || 0,
         });
       }
     }
@@ -65,6 +66,7 @@ export class SessionsService {
       is_active: true,
     } as any)
     .populate('client_id', 'name photo')
+    .populate('protocol_ids', 'name keywords')
     .sort({ scheduled_date: 1, start_time: 1 })
     .exec();
   }
@@ -87,5 +89,16 @@ export class SessionsService {
         { new: true }
       )
       .exec();
+  }
+
+  async findByClient(userId: string, clientId: string): Promise<SessionDocument[]> {
+    return this.sessionModel.find({
+      user_id: new Types.ObjectId(userId),
+      client_id: new Types.ObjectId(clientId),
+      is_active: true,
+    } as any)
+    .populate('protocol_ids', 'name keywords')
+    .sort({ scheduled_date: -1 })
+    .exec();
   }
 }

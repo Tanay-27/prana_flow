@@ -15,6 +15,7 @@ const ClientsPage: React.FC = () => {
     phone: '',
     email: '',
     photo: '',
+    base_fee: 0,
   });
   const [uploading, setUploading] = useState(false);
 
@@ -29,9 +30,10 @@ const ClientsPage: React.FC = () => {
         phone: editingClient.phone || '',
         email: editingClient.email || '',
         photo: editingClient.photo || '',
+        base_fee: editingClient.base_fee || 0,
       });
     } else {
-      setFormData({ name: '', phone: '', email: '', photo: '' });
+      setFormData({ name: '', phone: '', email: '', photo: '', base_fee: 0 });
     }
   }, [editingClient]);
 
@@ -257,11 +259,20 @@ const ClientsPage: React.FC = () => {
                   <input 
                     type="email"
                     className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-medium text-slate-900 focus:ring-2 focus:ring-teal-500/20"
-                    placeholder="john@example.com"
-                    value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Base Fee per Session (INR)</label>
+                <input 
+                  type="number"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none font-bold text-lg text-slate-900 focus:ring-2 focus:ring-teal-500/20"
+                  placeholder="0"
+                  value={formData.base_fee}
+                  onChange={(e) => setFormData({...formData, base_fee: parseInt(e.target.value) || 0})}
+                />
               </div>
 
               <div className="pt-4">

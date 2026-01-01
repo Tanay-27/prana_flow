@@ -21,6 +21,7 @@ const SessionsPage: React.FC = () => {
     endTime: '11:00',
     daysOfWeek: [] as number[],
     notes: '',
+    fee: 0,
   });
 
   useEffect(() => {
@@ -163,8 +164,15 @@ const SessionsPage: React.FC = () => {
                     <label className="block text-sm font-bold text-slate-700 mb-3">Select Client</label>
                     <select 
                       className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-teal-500/20 outline-none font-medium"
-                      value={formData.client_id}
-                      onChange={(e) => setFormData({...formData, client_id: e.target.value})}
+                      onChange={(e) => {
+                        const clientId = e.target.value;
+                        const client = clients.find(c => c._id === clientId);
+                        setFormData({
+                          ...formData, 
+                          client_id: clientId,
+                          fee: client?.base_fee || 0
+                        });
+                      }}
                       required
                     >
                       <option value="">Choose a client...</option>
@@ -173,6 +181,18 @@ const SessionsPage: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {formData.type === 'healing' && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-3">Fee per Session (INR)</label>
+                  <input 
+                    type="number"
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-teal-500/20 outline-none font-bold text-lg"
+                    value={formData.fee}
+                    onChange={(e) => setFormData({...formData, fee: parseInt(e.target.value) || 0})}
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-4">Repeat on Days</label>

@@ -32,6 +32,9 @@ export class Session {
   @Prop()
   notes: string;
 
+  @Prop({ default: 0 })
+  fee: number;
+
   @Prop({ default: true })
   is_active: boolean;
 }
