@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using HealingRays.Api.Services.Interfaces;
+using HealingRays.Api.Models;
 using System.Text.Json;
 
 namespace HealingRays.Api.Controllers
@@ -105,7 +106,7 @@ namespace HealingRays.Api.Controllers
                     return Unauthorized(new { message = "Invalid user token" });
                 }
 
-                var protocol = new Models.Protocol
+                var protocol = new Protocol
                 {
                     Name = protocolDto.Name,
                     Notes = protocolDto.Notes,

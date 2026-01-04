@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using HealingRays.Api.Services.Interfaces;
+using HealingRays.Api.Models;
 using System.Text.Json;
 
 namespace HealingRays.Api.Controllers
@@ -113,7 +114,7 @@ namespace HealingRays.Api.Controllers
                     return Unauthorized(new { message = "Invalid user token" });
                 }
 
-                var session = new Models.NurturingSession
+                var session = new NurturingSession
                 {
                     Name = sessionDto.Name,
                     Date = sessionDto.Date,
@@ -244,13 +245,13 @@ namespace HealingRays.Api.Controllers
     {
         public string Name { get; set; }
         public System.DateTime Date { get; set; }
-        public object[] ScheduleSlots { get; set; }
+        public object[] ScheduleSlots { get; set; } = new object[0];
         public string Coordinator { get; set; }
         public string PaymentDetails { get; set; }
-        public string Status { get; set; }
+        public string Status { get; set; } = "scheduled";
         public System.DateTime? RecordingAvailableTill { get; set; }
-        public object[] Attachments { get; set; }
-        public bool? IsActive { get; set; }
+        public object[] Attachments { get; set; } = new object[0];
+        public bool? IsActive { get; set; } = true;
     }
 
     public class NurturingSessionUpdateDto

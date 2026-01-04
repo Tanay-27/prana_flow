@@ -16,159 +16,141 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Define versions and URLs
-$DotNetRuntimeUrl = "https://download.visualstudio.microsoft.com/download/pr/5e17c7b6-d45f-4af7-92b3-8c4cabcff4bc/4c835b9b0bb25b7b7b7e1b4b5b7b7b7b7/dotnet-hosting-3.1.32-win.exe"
-$DotNetSdkUrl = "https://download.visualstudio.microsoft.com/download/pr/5e17c7b6-d45f-4af7-92b3-8c4cabcff4bc/4c835b9b0bb25b7b7b7e1b4b5b7b7b7b7/dotnet-sdk-3.1.426-win-x64.exe"
-$NssmUrl = "https://nssm.cc/release/nssm-2.24.zip"
-$NginxUrl = "https://nginx.org/download/nginx-1.26.0.zip"
+Write-Host "=== Installing Healing Rays Prerequisites ===" -ForegroundColor Green
 
-# Create temp directory
+# Define paths
+$AppDir = "C:\healingrays\app"
+$BackupDir = "C:\healingrays\backups"
+$LogDir = "C:\healingrays\logs"
 $TempDir = "$env:TEMP\HealingRaysSetup"
-New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
 
-Write-Host "=== Healing Rays Prerequisites Installation ===" -ForegroundColor Green
-
-function Install-DotNetRuntime {
-    Write-Host "Installing .NET Core 3.1 Runtime..." -ForegroundColor Yellow
-
-    if (!$SkipDownloads) {
-        Write-Host "Downloading .NET Core Runtime..."
-        Invoke-WebRequest -Uri $DotNetRuntimeUrl -OutFile "$TempDir\dotnet-runtime.exe"
-    }
-
-    Write-Host "Installing .NET Core Runtime..."
-    Start-Process -FilePath "$TempDir\dotnet-runtime.exe" -ArgumentList "/quiet /norestart" -Wait
-
-    Write-Host ".NET Core Runtime installed successfully." -ForegroundColor Green
-}
-
-function Install-DotNetSdk {
-    Write-Host "Installing .NET Core 3.1 SDK..." -ForegroundColor Yellow
-
-    if (!$SkipDownloads) {
-        Write-Host "Downloading .NET Core SDK..."
-        Invoke-WebRequest -Uri $DotNetSdkUrl -OutFile "$TempDir\dotnet-sdk.exe"
-    }
-
-    Write-Host "Installing .NET Core SDK..."
-    Start-Process -FilePath "$TempDir\dotnet-sdk.exe" -ArgumentList "/quiet /norestart" -Wait
-
-    Write-Host ".NET Core SDK installed successfully." -ForegroundColor Green
-}
-
-function Install-NSSM {
-    Write-Host "Installing NSSM..." -ForegroundColor Yellow
-
-    if (!$SkipDownloads) {
-        Write-Host "Downloading NSSM..."
-        Invoke-WebRequest -Uri $NssmUrl -OutFile "$TempDir\nssm.zip"
-    }
-
-    Write-Host "Extracting NSSM..."
-    Expand-Archive -Path "$TempDir\nssm.zip" -DestinationPath "$TempDir\nssm" -Force
-
-    # Copy NSSM to System32 for global access
-    Copy-Item "$TempDir\nssm\nssm-2.24\win64\nssm.exe" "C:\Windows\System32\nssm.exe" -Force
-
-    Write-Host "NSSM installed successfully." -ForegroundColor Green
-}
-
-function Install-Nginx {
-    Write-Host "Installing Nginx..." -ForegroundColor Yellow
-
-    if (!$SkipDownloads) {
-        Write-Host "Downloading Nginx..."
-        Invoke-WebRequest -Uri $NginxUrl -OutFile "$TempDir\nginx.zip"
-    }
-
-    Write-Host "Extracting Nginx..."
-    Expand-Archive -Path "$TempDir\nginx.zip" -DestinationPath "C:\" -Force
-
-    # Rename to standard nginx directory
-    if (Test-Path "C:\nginx-1.26.0") {
-        Rename-Item "C:\nginx-1.26.0" "C:\nginx" -Force
-    }
-
-    Write-Host "Nginx installed successfully." -ForegroundColor Green
-}
-
-function Create-ServiceAccount {
-    Write-Host "Creating service account..." -ForegroundColor Yellow
-
-    $ServiceAccount = "healingrays-svc"
-
-    # Check if account already exists
-    $existingUser = Get-LocalUser -Name $ServiceAccount -ErrorAction SilentlyContinue
-    if ($existingUser) {
-        Write-Host "Service account '$ServiceAccount' already exists." -ForegroundColor Yellow
-        return
-    }
-
-    # Create service account
-    $password = ConvertTo-SecureString "TempPass123!" -AsPlainText -Force
-    New-LocalUser -Name $ServiceAccount -Password $password -Description "Healing Rays Service Account" -UserMayNotChangePassword -PasswordNeverExpires
-
-    # Add to "Log on as a service" policy
-    $sid = (Get-LocalUser -Name $ServiceAccount).SID.Value
-    secedit /export /cfg "$TempDir\sec.cfg" | Out-Null
-    (Get-Content "$TempDir\sec.cfg") -replace 'SeServiceLogonRight = ', "SeServiceLogonRight = *$sid," | Set-Content "$TempDir\sec.cfg"
-    secedit /import /cfg "$TempDir\sec.cfg" /db "$TempDir\sec.sdb" | Out-Null
-    secedit /configure /db "$TempDir\sec.sdb" /cfg "$TempDir\sec.cfg" | Out-Null
-
-    Write-Host "Service account created and configured." -ForegroundColor Green
-}
-
-function Create-Directories {
-    Write-Host "Creating required directories..." -ForegroundColor Yellow
-
-    $directories = @(
-        "C:\healingrays\app",
-        "C:\healingrays\data\uploads",
-        "C:\healingrays\services",
-        "C:\healingrays\services\logs",
-        "C:\healingrays\nginx\conf",
-        "C:\healingrays\nginx\logs",
-        "C:\healingrays\nginx\html"
-    )
-
-    foreach ($dir in $directories) {
-        New-Item -ItemType Directory -Force -Path $dir | Out-Null
-    }
-
-    Write-Host "Directories created successfully." -ForegroundColor Green
-}
-
-# Main installation process
 try {
-    Install-DotNetRuntime
-    Install-DotNetSdk
-    Install-NSSM
-    Install-Nginx
-    Create-ServiceAccount
-    Create-Directories
-
-    # Verify installations
-    Write-Host "Verifying installations..." -ForegroundColor Yellow
-
-    $dotnetVersion = & dotnet --version
-    Write-Host ".NET SDK Version: $dotnetVersion" -ForegroundColor Green
-
-    if (Test-Path "C:\nginx\nginx.exe") {
-        Write-Host "Nginx installed successfully." -ForegroundColor Green
+    # Create directory structure
+    Write-Host "Creating directory structure..." -ForegroundColor Yellow
+    
+    @($AppDir, $BackupDir, $LogDir) | ForEach-Object {
+        if (-not (Test-Path $_)) {
+            New-Item -ItemType Directory -Force -Path $_ | Out-Null
+            Write-Host "Created directory: $_" -ForegroundColor Green
+        } else {
+            Write-Host "Directory already exists: $_" -ForegroundColor Yellow
+        }
     }
 
-    if (Test-Path "C:\Windows\System32\nssm.exe") {
-        Write-Host "NSSM installed successfully." -ForegroundColor Green
+    # Download and install .NET Core 3.1 Runtime
+    Write-Host "Installing .NET Core 3.1 Runtime..." -ForegroundColor Yellow
+    
+    $dotnetUrl = "https://download.microsoft.com/download/5/F/0/5F0362BD-7D0A-4A9D-9BF9-016851F0BF3C/dotnet-hosting-3.1.32-win.exe"
+    $dotnetInstaller = "$TempDir\dotnet-hosting-3.1.32-win.exe"
+    
+    # Check if .NET Core 3.1 is already installed
+    $dotnetInstalled = $false
+    try {
+        $dotnetVersion = & dotnet --list-runtimes 2>$null | Where-Object { $_ -match "Microsoft.AspNetCore.App 3.1" }
+        if ($dotnetVersion) {
+            Write-Host ".NET Core 3.1 Runtime already installed" -ForegroundColor Green
+            $dotnetInstalled = $true
+        }
+    } catch {
+        # dotnet command not found, need to install
     }
+    
+    if (-not $dotnetInstalled) {
+        if (!$SkipDownloads) {
+            Write-Host "Downloading .NET Core 3.1 Runtime..." -ForegroundColor Yellow
+            Invoke-WebRequest -Uri $dotnetUrl -OutFile $dotnetInstaller -UseBasicParsing
+        }
+        
+        Write-Host "Installing .NET Core 3.1 Runtime..." -ForegroundColor Yellow
+        Start-Process -FilePath $dotnetInstaller -ArgumentList "/quiet" -Wait
+        
+        # Verify installation
+        Start-Sleep -Seconds 5
+        $dotnetVersion = & dotnet --list-runtimes 2>$null | Where-Object { $_ -match "Microsoft.AspNetCore.App 3.1" }
+        if ($dotnetVersion) {
+            Write-Host ".NET Core 3.1 Runtime installed successfully" -ForegroundColor Green
+        } else {
+            throw ".NET Core 3.1 Runtime installation failed"
+        }
+    }
+
+    # Download and install NSSM
+    Write-Host "Installing NSSM (Non-Sucking Service Manager)..." -ForegroundColor Yellow
+    
+    $nssmPath = "C:\nssm"
+    if (-not (Test-Path "$nssmPath\nssm.exe")) {
+        $nssmUrl = "https://nssm.cc/release/nssm-2.24.zip"
+        $nssmZip = "$TempDir\nssm-2.24.zip"
+        $nssmExtract = "$TempDir\nssm-2.24"
+        
+        if (!$SkipDownloads) {
+            Write-Host "Downloading NSSM..." -ForegroundColor Yellow
+            Invoke-WebRequest -Uri $nssmUrl -OutFile $nssmZip -UseBasicParsing
+        }
+        
+        Write-Host "Extracting NSSM..." -ForegroundColor Yellow
+        Expand-Archive -Path $nssmZip -DestinationPath $TempDir -Force
+        
+        # Create NSSM directory
+        if (-not (Test-Path $nssmPath)) {
+            New-Item -ItemType Directory -Force -Path $nssmPath | Out-Null
+        }
+        
+        # Copy appropriate NSSM executable
+        $architecture = if ([Environment]::Is64BitOperatingSystem) { "win64" } else { "win32" }
+        Copy-Item "$nssmExtract\nssm-2.24\$architecture\nssm.exe" -Destination "$nssmPath\nssm.exe" -Force
+        
+        # Add NSSM to PATH
+        $currentPath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
+        if ($currentPath -notlike "*$nssmPath*") {
+            [Environment]::SetEnvironmentVariable("PATH", "$currentPath;$nssmPath", "Machine")
+            Write-Host "Added NSSM to system PATH" -ForegroundColor Green
+        }
+        
+        Write-Host "NSSM installed successfully" -ForegroundColor Green
+    } else {
+        Write-Host "NSSM already installed" -ForegroundColor Green
+    }
+
+    # Create service account (optional, can run as Local System)
+    Write-Host "Setting up service configuration..." -ForegroundColor Yellow
+    
+    $serviceName = "HealingRaysApp"
+    Write-Host "Service will be configured as: $serviceName" -ForegroundColor Green
+
+    # Set up Windows Firewall rule for port 5000
+    Write-Host "Configuring Windows Firewall..." -ForegroundColor Yellow
+    
+    $firewallRule = Get-NetFirewallRule -DisplayName "Healing Rays Application" -ErrorAction SilentlyContinue
+    if (-not $firewallRule) {
+        New-NetFirewallRule -DisplayName "Healing Rays Application" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow | Out-Null
+        Write-Host "Created firewall rule for port 5000" -ForegroundColor Green
+    } else {
+        Write-Host "Firewall rule already exists" -ForegroundColor Green
+    }
+
+    # Clean up temporary files
+    Write-Host "Cleaning up temporary files..." -ForegroundColor Yellow
+    Remove-Item "$TempDir\*" -Recurse -Force -ErrorAction SilentlyContinue
 
     Write-Host "=== Prerequisites installation completed successfully! ===" -ForegroundColor Green
+    Write-Host "" -ForegroundColor White
+    Write-Host "Installed components:" -ForegroundColor Yellow
+    Write-Host "- .NET Core 3.1 Runtime (ASP.NET Core)" -ForegroundColor White
+    Write-Host "- NSSM (Windows Service Manager)" -ForegroundColor White
+    Write-Host "- Directory structure in C:\healingrays\" -ForegroundColor White
+    Write-Host "- Windows Firewall rule for port 5000" -ForegroundColor White
+    Write-Host "" -ForegroundColor White
     Write-Host "Next steps:" -ForegroundColor Yellow
-    Write-Host "1. Run Setup-Database.ps1 to configure SQL Server" -ForegroundColor White
-    Write-Host "2. Run Build-Application.ps1 to build the .NET application" -ForegroundColor White
-    Write-Host "3. Run Deploy-Backend.ps1 to deploy the backend service" -ForegroundColor White
+    Write-Host "1. Run Setup-Database.ps1 to configure the database" -ForegroundColor White
+    Write-Host "2. Run Deploy-Integrated.ps1 to deploy the application" -ForegroundColor White
+    Write-Host "" -ForegroundColor White
+    Write-Host "No longer required:" -ForegroundColor Yellow
+    Write-Host "- Nginx (integrated into .NET Core)" -ForegroundColor Green
+    Write-Host "- Node.js on production server (build locally)" -ForegroundColor Green
 
 } catch {
-    Write-Host "Error during installation: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Error during prerequisites installation: $($_.Exception.Message)" -ForegroundColor Red
     throw
 } finally {
     # Cleanup

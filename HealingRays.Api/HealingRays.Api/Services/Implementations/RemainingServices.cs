@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HealingRays.Api.Repositories.Interfaces;
 using HealingRays.Api.Services.Interfaces;
+using HealingRays.Api.Models;
 
 namespace HealingRays.Api.Services.Implementations
 {
@@ -90,29 +92,29 @@ namespace HealingRays.Api.Services.Implementations
             _paymentRepository = paymentRepository;
         }
 
-        public async Task<Models.Payment> GetByIdAsync(int id)
+        public async Task<Payment> GetByIdAsync(int id)
         {
             return await _paymentRepository.GetByIdAsync(id);
         }
 
-        public async Task<IEnumerable<Models.Payment>> GetByClientIdAsync(int clientId)
+        public async Task<IEnumerable<Payment>> GetByClientIdAsync(int clientId)
         {
             return await _paymentRepository.GetByClientIdAsync(clientId);
         }
 
-        public async Task<IEnumerable<Models.Payment>> GetByHealerIdAsync(int healerId)
+        public async Task<IEnumerable<Payment>> GetByHealerIdAsync(int healerId)
         {
             return await _paymentRepository.GetByHealerIdAsync(healerId);
         }
 
-        public async Task<Models.Payment> CreateAsync(Models.Payment payment)
+        public async Task<Payment> CreateAsync(Payment payment)
         {
             payment.CreatedAt = System.DateTime.UtcNow;
             payment.UpdatedAt = System.DateTime.UtcNow;
             return await _paymentRepository.AddAsync(payment);
         }
 
-        public async Task UpdateAsync(Models.Payment payment)
+        public async Task UpdateAsync(Payment payment)
         {
             payment.UpdatedAt = System.DateTime.UtcNow;
             await _paymentRepository.UpdateAsync(payment);
@@ -133,24 +135,24 @@ namespace HealingRays.Api.Services.Implementations
             _nurturingSessionRepository = nurturingSessionRepository;
         }
 
-        public async Task<Models.NurturingSession> GetByIdAsync(int id)
+        public async Task<NurturingSession> GetByIdAsync(int id)
         {
             return await _nurturingSessionRepository.GetByIdAsync(id);
         }
 
-        public async Task<IEnumerable<Models.NurturingSession>> GetByHealerIdAsync(int healerId)
+        public async Task<IEnumerable<NurturingSession>> GetByHealerIdAsync(int healerId)
         {
             return await _nurturingSessionRepository.GetByHealerIdAsync(healerId);
         }
 
-        public async Task<Models.NurturingSession> CreateAsync(Models.NurturingSession session)
+        public async Task<NurturingSession> CreateAsync(NurturingSession session)
         {
             session.CreatedAt = System.DateTime.UtcNow;
             session.UpdatedAt = System.DateTime.UtcNow;
             return await _nurturingSessionRepository.AddAsync(session);
         }
 
-        public async Task UpdateAsync(Models.NurturingSession session)
+        public async Task UpdateAsync(NurturingSession session)
         {
             session.UpdatedAt = System.DateTime.UtcNow;
             await _nurturingSessionRepository.UpdateAsync(session);

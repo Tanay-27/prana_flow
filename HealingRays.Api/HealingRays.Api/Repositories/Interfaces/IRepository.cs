@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System;
 
 namespace HealingRays.Api.Repositories.Interfaces
 {

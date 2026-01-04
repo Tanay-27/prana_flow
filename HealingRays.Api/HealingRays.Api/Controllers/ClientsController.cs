@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HealingRays.Api.Services.Interfaces;
+using HealingRays.Api.Models;
 using System.Text.Json;
 
 namespace HealingRays.Api.Controllers
@@ -74,7 +75,7 @@ namespace HealingRays.Api.Controllers
                         timestamp = n.Timestamp,
                         text = n.Text
                     }),
-                    protocol_ids = JsonSerializer.Deserialize<int[]>(c.ProtocolIds ?? "[]"),
+                    protocol_ids = c.ClientProtocols?.Select(cp => cp.ProtocolId).ToArray() ?? new int[0],
                     createdAt = c.CreatedAt,
                     updatedAt = c.UpdatedAt
                 });
@@ -121,7 +122,7 @@ namespace HealingRays.Api.Controllers
                         timestamp = n.Timestamp,
                         text = n.Text
                     }),
-                    protocol_ids = JsonSerializer.Deserialize<int[]>(client.ProtocolIds ?? "[]"),
+                    protocol_ids = client.ClientProtocols?.Select(cp => cp.ProtocolId).ToArray() ?? new int[0],
                     createdAt = client.CreatedAt,
                     updatedAt = client.UpdatedAt
                 };
@@ -145,7 +146,7 @@ namespace HealingRays.Api.Controllers
                     return Unauthorized(new { message = "Invalid user token" });
                 }
 
-                var client = new Models.Client
+                var client = new Client
                 {
                     Name = clientDto.Name,
                     Photo = clientDto.Photo,
@@ -154,7 +155,10 @@ namespace HealingRays.Api.Controllers
                     BaseFee = clientDto.BaseFee ?? 0,
                     IsActive = clientDto.IsActive ?? true,
                     HealerId = userId,
-                    ProtocolIds = JsonSerializer.Serialize(clientDto.ProtocolIds ?? new int[0])
+                    ClientProtocols = (clientDto.ProtocolIds ?? new int[0]).Select(pid => new ClientProtocol
+                    {
+                        ProtocolId = pid
+                    }).ToList()
                 };
 
                 var createdClient = await _clientService.CreateAsync(client);
@@ -170,7 +174,7 @@ namespace HealingRays.Api.Controllers
                     is_active = createdClient.IsActive,
                     healer_id = createdClient.HealerId,
                     notes = new object[0],
-                    protocol_ids = JsonSerializer.Deserialize<int[]>(createdClient.ProtocolIds ?? "[]"),
+                    protocol_ids = createdClient.ClientProtocols?.Select(cp => cp.ProtocolId).ToArray() ?? new int[0],
                     createdAt = createdClient.CreatedAt,
                     updatedAt = createdClient.UpdatedAt
                 };
@@ -208,7 +212,23 @@ namespace HealingRays.Api.Controllers
                 client.Email = clientDto.Email ?? client.Email;
                 client.BaseFee = clientDto.BaseFee ?? client.BaseFee;
                 client.IsActive = clientDto.IsActive ?? client.IsActive;
-                client.ProtocolIds = clientDto.ProtocolIds != null ? JsonSerializer.Serialize(clientDto.ProtocolIds) : client.ProtocolIds;
+
+                // Handle protocol associations through ClientProtocols
+                if (clientDto.ProtocolIds != null)
+                {
+                    // Remove existing protocol associations
+                    client.ClientProtocols?.Clear();
+
+                    // Add new protocol associations
+                    foreach (var protocolId in clientDto.ProtocolIds)
+                    {
+                        client.ClientProtocols?.Add(new ClientProtocol
+                        {
+                            ClientId = client.Id,
+                            ProtocolId = protocolId
+                        });
+                    }
+                }
 
                 await _clientService.UpdateAsync(client);
 
@@ -222,12 +242,12 @@ namespace HealingRays.Api.Controllers
                     base_fee = client.BaseFee,
                     is_active = client.IsActive,
                     healer_id = client.HealerId,
-                    notes = client.Notes.Select(n => new
+                    notes = client.Notes?.Select(n => new
                     {
                         timestamp = n.Timestamp,
                         text = n.Text
                     }),
-                    protocol_ids = JsonSerializer.Deserialize<int[]>(client.ProtocolIds ?? "[]"),
+                    protocol_ids = client.ClientProtocols?.Select(cp => cp.ProtocolId).ToArray() ?? new int[0],
                     createdAt = client.CreatedAt,
                     updatedAt = client.UpdatedAt
                 };

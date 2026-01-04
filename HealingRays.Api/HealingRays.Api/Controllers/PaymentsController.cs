@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using HealingRays.Api.Services.Interfaces;
+using HealingRays.Api.Models;
 
 namespace HealingRays.Api.Controllers
 {
@@ -121,7 +122,7 @@ namespace HealingRays.Api.Controllers
                     return Unauthorized(new { message = "Invalid user token" });
                 }
 
-                var payment = new Models.Payment
+                var payment = new Payment
                 {
                     SessionId = paymentDto.SessionId,
                     ClientId = paymentDto.ClientId,

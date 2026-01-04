@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using HealingRays.Api.Repositories.Interfaces;
 using HealingRays.Api.Services.Interfaces;
+using HealingRays.Api.Models;
 
 namespace HealingRays.Api.Services.Implementations
 {
@@ -14,29 +15,29 @@ namespace HealingRays.Api.Services.Implementations
             _sessionRepository = sessionRepository;
         }
 
-        public async Task<Models.Session> GetByIdAsync(int id)
+        public async Task<Session> GetByIdAsync(int id)
         {
             return await _sessionRepository.GetByIdAsync(id);
         }
 
-        public async Task<IEnumerable<Models.Session>> GetByUserIdAsync(int userId)
+        public async Task<IEnumerable<Session>> GetByUserIdAsync(int userId)
         {
             return await _sessionRepository.GetByUserIdAsync(userId);
         }
 
-        public async Task<IEnumerable<Models.Session>> GetByClientIdAsync(int clientId)
+        public async Task<IEnumerable<Session>> GetByClientIdAsync(int clientId)
         {
             return await _sessionRepository.GetByClientIdAsync(clientId);
         }
 
-        public async Task<Models.Session> CreateAsync(Models.Session session)
+        public async Task<Session> CreateAsync(Session session)
         {
             session.CreatedAt = System.DateTime.UtcNow;
             session.UpdatedAt = System.DateTime.UtcNow;
             return await _sessionRepository.AddAsync(session);
         }
 
-        public async Task UpdateAsync(Models.Session session)
+        public async Task UpdateAsync(Session session)
         {
             session.UpdatedAt = System.DateTime.UtcNow;
             await _sessionRepository.UpdateAsync(session);

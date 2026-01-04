@@ -45,7 +45,7 @@ namespace HealingRays.Api.Services.Implementations
             }
 
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (!_allowedExtensions.Contains(extension))
+            if (!Array.Exists(_allowedExtensions, ext => ext == extension))
             {
                 throw new ArgumentException($"File type '{extension}' is not allowed. Allowed types: {string.Join(", ", _allowedExtensions)}");
             }

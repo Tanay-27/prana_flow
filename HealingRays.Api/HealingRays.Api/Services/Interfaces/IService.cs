@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using HealingRays.Api.DTOs.Auth;
 
 namespace HealingRays.Api.Services.Interfaces

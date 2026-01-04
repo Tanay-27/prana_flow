@@ -1,6 +1,6 @@
-# PranaFlow 🌿
+# Healing Rays 🌿
 
-PranaFlow is a premium, specialized practice management system designed specifically for **Pranic Healers**. It streamlines the administrative aspects of healing work, allowing practitioners to focus on what matters most: energy work and patient care.
+Healing Rays is a premium, specialized practice management system designed specifically for **Pranic Healers**. It streamlines the administrative aspects of healing work, allowing practitioners to focus on what matters most: energy work and patient care.
 
 ## ✨ Key Features
 
@@ -21,93 +21,248 @@ PranaFlow is a premium, specialized practice management system designed specific
 - **Date Handling**: date-fns
 
 ### Backend
-- **Framework**: NestJS (TypeScript)
-- **Database**: MongoDB (Mongoose)
-- **Authentication**: JWT with Passport Strategy
-- **Object Storage**: Minio (S3 Compatible)
+- **Framework**: .NET Core 3.1 Web API
+- **Database**: Microsoft SQL Server (LocalDB/SQL Server)
+- **Authentication**: JWT with ASP.NET Core Authentication
+- **File Storage**: Local File System Service
+- **Architecture**: Integrated SPA (Single Page Application)
+
+## 🏗️ Architecture
+
+The application uses an **integrated architecture** where .NET Core serves both the API and React frontend:
+
+```
+┌─────────────────────────────────────┐
+│        .NET Core Application       │
+│  ┌─────────────┐ ┌─────────────────┐│
+│  │   React     │ │   Web API       ││
+│  │  Frontend   │ │  Controllers    ││
+│  │ (wwwroot/)  │ │   (/api/*)      ││
+│  └─────────────┘ └─────────────────┘│
+│         Single Process              │
+│      Single Port (5000)             │
+└─────────────────────────────────────┘
+```
+
+**Benefits:**
+- ✅ Single deployment artifact
+- ✅ No separate web server required
+- ✅ No CORS configuration needed
+- ✅ Simplified maintenance
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [Docker & Docker Compose](https://www.docker.com/products/docker-desktop/)
 
-### Installation
+#### Development Machine
+- [Node.js](https://nodejs.org/) (v16 or higher) - for building frontend
+- [.NET Core 3.1 SDK](https://dotnet.microsoft.com/download/dotnet/3.1)
+- [SQL Server LocalDB](https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/sql-server-express-localdb) or SQL Server
 
-1. **Step 1: Start Infrastructure (Databases & Storage)**:
+#### Production Server (Windows)
+- **Windows Server 2016+**
+- **.NET Core 3.1 Runtime** (ASP.NET Core)
+- **SQL Server** (LocalDB or full instance)
+- **NSSM** (Non-Sucking Service Manager)
+
+### Development Setup
+
+1. **Clone the Repository**:
    ```bash
-   docker-compose up -d
-   ```
-   *This starts MongoDB (Port 27017) and Minio (Port 9000).*
-
-2. **Step 2: Install Dependencies**:
-   ```bash
-   # Backend
-   cd backend && npm install
-   
-   # Frontend
-   cd ../frontend && npm install
-   ```
-
-3. **Step 3: Add Environment Variables**:
-   Create a `.env` file in the `backend` directory based on common defaults or your specific setup.
-
-### 🏃 Running the Application
-
-1. **Start the Backend**:
-   ```bash
-   cd backend
-   npm run start:dev
+   git clone <repository-url>
+   cd healing-rays
    ```
 
-2. **Start the Frontend**:
+2. **Setup Database**:
+   ```bash
+   # Create database and run migrations
+   cd HealingRays.Api/HealingRays.Api
+   dotnet ef database update
+   ```
+
+3. **Build Frontend**:
    ```bash
    cd frontend
-   npm run dev
+   npm install
+   npm run build
+   # Copy build to .NET Core wwwroot
+   cp -r dist/* ../HealingRays.Api/HealingRays.Api/wwwroot/
    ```
 
-3. **Seed the Database (Optional)**:
-   To populate the app with sample data for demonstration:
+4. **Run Application**:
    ```bash
-   cd backend
-   npm run seed
+   cd HealingRays.Api/HealingRays.Api
+   dotnet run
    ```
 
-## 🧰 Windows Deployment Assets
+5. **Access Application**:
+   - Frontend: http://localhost:5000/
+   - API: http://localhost:5000/api/
+   - Swagger: http://localhost:5000/swagger/
 
-- Production environment variables: `backend/.env.sample` (copy to `.env` and update secrets).
-- Detailed Windows Server 2012 setup plus PowerShell service scripts live in `setup/windows/`.
-  - `setup/windows/windows_deployment.md` – end-to-end installation guide (MongoDB, MinIO, backend, frontend, nginx, NSSM).
-  - `setup/windows/scripts/*.ps1` – reusable helpers for registering and starting backend/frontend/MinIO services.
-  - Designed for bare-metal/VM deployments with a static IP and no Docker support.
+### Production Deployment
+
+For Windows Server deployment, use the automated PowerShell scripts:
+
+1. **Install Prerequisites**:
+   ```powershell
+   .\setup\dotnet\scripts\Install-Prerequisites.ps1
+   ```
+
+2. **Setup Database**:
+   ```powershell
+   .\setup\dotnet\scripts\Setup-Database.ps1
+   ```
+
+3. **Deploy Application**:
+   ```powershell
+   .\setup\dotnet\scripts\Deploy-Integrated.ps1
+   ```
+
+4. **Health Check**:
+   ```powershell
+   .\setup\dotnet\scripts\Health-Check.ps1
+   ```
 
 ## 📁 Project Structure
 
 ```text
-├── backend/            # NestJS API
+├── HealingRays.Api/           # .NET Core Web API
+│   ├── HealingRays.Api/
+│   │   ├── Controllers/       # API Controllers
+│   │   ├── Services/          # Business Logic
+│   │   ├── Repositories/      # Data Access Layer
+│   │   ├── Models/           # Entity Models
+│   │   ├── DTOs/             # Data Transfer Objects
+│   │   ├── Configuration/    # Database Context
+│   │   └── wwwroot/          # React Frontend Build
+├── frontend/                 # React SPA
 │   ├── src/
-│   │   ├── auth/       # Authentication & JWT Logic
-│   │   ├── clients/    # Client Profiles & Notes
-│   │   ├── sessions/   # Healing Schedules
-│   │   ├── payments/   # Revenue Tracking
-│   │   └── storage/    # Minio/S3 File Handling
-├── frontend/           # Vite + React SPA
-│   ├── src/
-│   │   ├── components/ # Reusable UI Components
-│   │   ├── store/      # Zustand State Stores
-│   │   └── pages/      # View Components (Dashboard, Clients, etc.)
-├── docs/               # Technical Documentation
-└── docker-compose.yml  # Local Infrastructure setup
+│   │   ├── components/       # Reusable UI Components
+│   │   ├── store/           # Zustand State Stores
+│   │   ├── pages/           # View Components
+│   │   └── api/             # API Client
+├── setup/                   # Deployment Scripts
+│   └── dotnet/
+│       ├── scripts/         # PowerShell Deployment Scripts
+│       └── dotnet_deployment.md  # Deployment Guide
+└── docs/                    # Technical Documentation
 ```
 
-## 🔒 Data & Privacy (Rich Media)
+## 🔧 Configuration
 
-PranaFlow stores rich data like profile photos and protocol attachments in **Minio** (an S3-compatible object storage server). 
+### Database Configuration
 
-**Why Minio instead of MongoDB?**
-- **Efficiency**: Object storage is optimized for large binary files, whereas MongoDB is optimized for structured documents.
-- **Separation of Concerns**: Keeping large files out of the database keeps database backups small and fast.
-- **Portability**: Standardizing on S3-compatible API makes it trivial to move to AWS S3 or Google Cloud Storage in the future.
+Update `appsettings.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=HealingRaysDb;Trusted_Connection=true;"
+  },
+  "JwtSettings": {
+    "Secret": "your-super-secret-jwt-key-here",
+    "ExpiryInDays": 7
+  }
+}
+```
+
+### Frontend Configuration
+
+The frontend automatically uses relative API paths since it's served from the same origin.
+
+## 🚀 Deployment Options
+
+### Option 1: Integrated Deployment (Recommended)
+- Single .NET Core application serving both frontend and API
+- No additional web server required
+- Simplified configuration and maintenance
+
+### Option 2: Separate Deployment
+- Frontend served by Nginx/IIS
+- Backend as separate API service
+- Traditional microservices approach
+
+## 📋 Service Management
+
+The application runs as a Windows Service:
+
+```powershell
+# Service management commands
+Start-Service -Name HealingRaysApp
+Stop-Service -Name HealingRaysApp
+Restart-Service -Name HealingRaysApp
+Get-Service -Name HealingRaysApp
+```
+
+## 🔒 Security Features
+
+- **JWT Authentication**: Secure token-based authentication
+- **SQL Server Security**: Integrated Windows authentication
+- **Input Validation**: Comprehensive data validation
+- **File Upload Security**: Restricted file types and sizes
+- **HTTPS Support**: SSL/TLS encryption ready
+
+## 📊 Monitoring & Health Checks
+
+Use the built-in health check script:
+
+```powershell
+.\setup\dotnet\scripts\Health-Check.ps1
+```
+
+This verifies:
+- ✅ Windows Service status
+- ✅ Application responsiveness
+- ✅ Frontend accessibility
+- ✅ API endpoints
+- ✅ Database connectivity
+
+## 🔄 Migration from Node.js
+
+This application was migrated from a Node.js/NestJS backend to .NET Core 3.1. The migration maintains:
+
+- ✅ **Exact API compatibility**: All endpoints and response formats preserved
+- ✅ **Database schema mapping**: MongoDB structure mapped to SQL Server
+- ✅ **Frontend compatibility**: React frontend works without changes
+- ✅ **Feature parity**: All functionality maintained
+
+## 📚 Documentation
+
+- **Deployment Guide**: `setup/dotnet/dotnet_deployment.md`
+- **API Documentation**: Available at `/swagger` when running
+- **Database Schema**: `setup/dotnet/mssql_schema.sql`
+
+## 🛠️ Development Commands
+
+```bash
+# Frontend development
+cd frontend
+npm run dev          # Start development server
+npm run build        # Build for production
+
+# Backend development
+cd HealingRays.Api/HealingRays.Api
+dotnet run           # Start development server
+dotnet build         # Build application
+dotnet publish       # Publish for deployment
+
+# Database operations
+dotnet ef migrations add <name>    # Create migration
+dotnet ef database update         # Apply migrations
+```
+
+## 🎯 Production Checklist
+
+- [ ] Install .NET Core 3.1 Runtime
+- [ ] Configure SQL Server
+- [ ] Build and deploy frontend to wwwroot
+- [ ] Configure appsettings.json
+- [ ] Install as Windows Service
+- [ ] Configure firewall (port 5000)
+- [ ] Run health checks
+- [ ] Setup backup procedures
 
 ---
+
 *Created with 🙏 for the Healing Community.*

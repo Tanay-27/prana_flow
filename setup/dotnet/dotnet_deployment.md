@@ -80,249 +80,89 @@ Run PowerShell as Administrator:
 & "C:\healingrays\setup\dotnet\scripts\Install-Prerequisites.ps1"
 ```
 
-This script will:
-- Install .NET Core 3.1 Runtime
-- Install .NET Core 3.1 SDK
-- Install NSSM service manager
-- Install Nginx
-- Create required directories
+This installs:
+- .NET Core 3.1 Runtime
+- NSSM for Windows Service management
+- Creates necessary directories
+- Sets up service account
 
----
+### 2. Setup Database
 
-## 4. Folder Preparation
-
+Configure SQL Server and create the database schema:
 ```powershell
-New-Item -ItemType Directory -Force -Path "C:\healingrays\app"
-New-Item -ItemType Directory -Force -Path "C:\healingrays\data\uploads"
-New-Item -ItemType Directory -Force -Path "C:\healingrays\services\logs"
-New-Item -ItemType Directory -Force -Path "C:\healingrays\nginx\conf"
-New-Item -ItemType Directory -Force -Path "C:\healingrays\nginx\logs"
-New-Item -ItemType Directory -Force -Path "C:\healingrays\nginx\html"
+.\setup\dotnet\scripts\Setup-Database.ps1
 ```
 
-Fetch the repo into `C:\healingrays\app`:
+### 3. Deploy Application
 
+#### Option A: Automated Deployment
 ```powershell
-cd C:\healingrays\app
-git clone https://github.com/<org>/healingrays.git .
+# Single command deployment
+.\setup\dotnet\scripts\Deploy-Integrated.ps1
 ```
 
----
-
-## 5. Database Setup
-
-### 5.1 SQL Server Installation
-
-For LocalDB (recommended for small deployments):
-
+#### Option B: Manual Steps
 ```powershell
-# Install SQL Server LocalDB
-& "C:\healingrays\setup\dotnet\scripts\Setup-Database.ps1" -DatabaseType LocalDB
+# 1. Build frontend locally
+cd frontend/
+npm install
+npm run build
+
+# 2. Copy frontend to .NET Core
+cp -r dist/* ../HealingRays.Api/HealingRays.Api/wwwroot/
+
+# 3. Publish .NET Core application
+cd ../HealingRays.Api/HealingRays.Api/
+dotnet publish --configuration Release --output C:\healingrays\app\published
+
+# 4. Install as Windows Service
+.\setup\dotnet\scripts\Register-Services.ps1
 ```
 
-For full SQL Server:
+## Configuration
 
-```powershell
-# Install and configure full SQL Server instance
-& "C:\healingrays\setup\dotnet\scripts\Setup-Database.ps1" -DatabaseType FullSQL -InstanceName "HEALINGRAYS"
-```
+### Application Settings
 
-### 5.2 Create Database Schema
-
-Run the schema creation script:
-
-```powershell
-# Connect to SQL Server and run the schema script
-sqlcmd -S "(localdb)\MSSQLLocalDB" -i "C:\healingrays\setup\dotnet\mssql_schema.sql"
-```
-
-Or for full SQL Server:
-
-```powershell
-sqlcmd -S "localhost\HEALINGRAYS" -i "C:\healingrays\setup\dotnet\mssql_schema.sql"
-```
-
----
-
-## 6. Backend (.NET Core) Deployment
-
-### 6.1 Configuration
-
-Copy and configure `appsettings.json`:
-
-```powershell
-cd C:\healingrays\app\HealingRays.Api\HealingRays.Api
-Copy-Item appsettings.json appsettings.Production.json
-
-# Edit appsettings.Production.json with production values
-notepad appsettings.Production.json
-```
-
-Key settings to update:
+Update `appsettings.json` in the published directory:
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=HealingRaysDb;Trusted_Connection=True;"
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=HealingRaysDb;Trusted_Connection=true;MultipleActiveResultSets=true;"
   },
   "JwtSettings": {
-    "Secret": "your-very-secure-secret-key-here-change-in-production",
-    "ExpirationDays": 30
-  }
+    "Secret": "your-super-secret-jwt-key-here-make-it-long-and-secure",
+    "ExpiryInDays": 7
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*"
 }
 ```
 
-### 6.2 Build Application
+### Frontend Configuration
 
-```powershell
-# Run the build script
-& "C:\healingrays\setup\dotnet\scripts\Build-Application.ps1"
+The frontend build is automatically configured to use relative API paths since it's served from the same origin.
+
+## URL Structure
+
+After deployment, the application will be available at:
+
+```
+http://localhost:5000/              # React Frontend (SPA)
+http://localhost:5000/dashboard     # React Routes
+http://localhost:5000/clients       # React Routes
+http://localhost:5000/api/auth      # API Endpoints
+http://localhost:5000/api/clients   # API Endpoints
+http://localhost:5000/api/sessions  # API Endpoints
 ```
 
-This script will:
-- Restore NuGet packages
-- Build the application in Release mode
-- Publish to `C:\healingrays\app\published`
-
-### 6.3 Windows Service
-
-```powershell
-# Run the backend deployment script
-& "C:\healingrays\setup\dotnet\scripts\Deploy-Backend.ps1"
-```
-
-This script will:
-- Copy published files to service directory
-- Register with NSSM as Windows service
-- Configure service to run as `healingrays-svc`
-- Set up logging
-
----
-
-## 7. Frontend Deployment
-
-### 7.1 Build Static Assets
-
-```powershell
-# Run the frontend deployment script
-& "C:\healingrays\setup\dotnet\scripts\Deploy-Frontend.ps1"
-```
-
-This script will:
-- Install npm dependencies
-- Set API URL environment variable
-- Build production assets
-- Copy to Nginx directory
-
-### 7.2 Environment Variable
-
-The script sets: `VITE_API_URL="http://127.0.0.1:5001"`
-
----
-
-## 8. Nginx Configuration
-
-Create `C:\healingrays\nginx\conf\healingrays.conf`:
-
-```nginx
-server {
-    listen 80;
-    server_name <STATIC_PUBLIC_IP_OR_DOMAIN>;
-
-    root   C:/healingrays/nginx/html;
-    index  index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:5001/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    access_log  C:/healingrays/nginx/logs/access.log;
-    error_log   C:/healingrays/nginx/logs/error.log;
-}
-
-# HTTPS configuration (recommended for production)
-server {
-    listen 443 ssl http2;
-    server_name <STATIC_PUBLIC_IP_OR_DOMAIN>;
-
-    ssl_certificate C:/path/to/certificate.crt;
-    ssl_certificate_key C:/path/to/private.key;
-    ssl_protocols TLSv1.2 TLSv1.3;
-
-    root   C:/healingrays/nginx/html;
-    index  index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api/ {
-        proxy_pass http://127.0.0.1:5001/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    access_log  C:/healingrays/nginx/logs/access.log;
-    error_log   C:/healingrays/nginx/logs/error.log;
-}
-```
-
-Update main Nginx config `C:\nginx\conf\nginx.conf`:
-
-```nginx
-worker_processes  1;
-error_log  logs/error.log;
-pid        logs/nginx.pid;
-
-events { worker_connections 1024; }
-
-http {
-    include       mime.types;
-    default_type  application/octet-stream;
-    sendfile        on;
-    keepalive_timeout  65;
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
-    include C:/healingrays/nginx/conf/healingrays.conf;
-}
-```
-
-Start Nginx:
-
-```powershell
-cd C:\nginx
-start nginx.exe
-```
-
----
-
-## 9. Service Registration
-
-Run the service registration script:
-
-```powershell
-& "C:\healingrays\setup\dotnet\scripts\Register-Services.ps1"
-```
-
-This will register both backend and frontend services with NSSM.
+## Service Management
 
 ---
 
