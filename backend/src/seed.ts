@@ -33,24 +33,28 @@ async function seed() {
 
     // 1. Create Admin user
     const existingAdmin = await User.findOne({ username: 'admin' });
+    const adminPassword = await bcrypt.hash('Admin@123', 10);
+    let adminId: Types.ObjectId;
     if (!existingAdmin) {
-      const adminPassword = await bcrypt.hash('Admin@123', 10);
-      await User.create({
+      const admin = await User.create({
         username: 'admin',
         password: adminPassword,
         role: 'admin',
         isActive: true,
       });
+      adminId = admin._id as Types.ObjectId;
       console.log('Admin created: admin / Admin@123');
     } else {
-      console.log('Admin already exists.');
+      adminId = existingAdmin._id as Types.ObjectId;
+      await User.updateOne({ _id: adminId }, { $set: { password: adminPassword } });
+      console.log('Admin password reset to Admin@123');
     }
 
     // 2. Create Healer
     const existingHealer = await User.findOne({ username: 'healer' });
     let healerId;
+    const healerPassword = await bcrypt.hash('Healer@123', 10);
     if (!existingHealer) {
-      const healerPassword = await bcrypt.hash('Healer@123', 10);
       const healer = await User.create({
         username: 'healer',
         password: healerPassword,
@@ -61,7 +65,8 @@ async function seed() {
       console.log('Healer created: healer / Healer@123');
     } else {
       healerId = existingHealer._id;
-      console.log('Healer already exists.');
+      await User.updateOne({ _id: healerId }, { $set: { password: healerPassword } });
+      console.log('Healer password reset to Healer@123');
     }
 
     // 3. Create Clients
@@ -81,21 +86,52 @@ async function seed() {
     const protocols = await Protocol.insertMany(protocolsData);
     console.log(`Created ${protocols.length} protocols.`);
 
-    // 5. Create Sessions
-    const sessionsData = [
-      { 
-        type: 'healing', 
-        user_id: healerId, 
-        client_id: clients[0]._id, 
+    // 5. Create Sessions (only if user has none)
+    const healerSessions = [
+      {
+        type: 'healing',
+        user_id: healerId,
+        client_id: clients[0]._id,
         protocol_ids: [protocols[0]._id],
         scheduled_date: new Date(),
         start_time: '10:00',
         end_time: '11:00',
         status: 'scheduled',
-        is_active: true
+        notes: 'Demo session with John Smith',
+        is_active: true,
       },
     ];
-    await Session.insertMany(sessionsData);
+
+    const adminSessions = [
+      {
+        type: 'healing',
+        user_id: adminId,
+        client_id: clients[1]?._id || clients[0]._id,
+        protocol_ids: [protocols[1]?._id || protocols[0]._id],
+        scheduled_date: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        start_time: '14:00',
+        end_time: '15:00',
+        status: 'scheduled',
+        notes: 'Demo session for admin user',
+        is_active: true,
+      },
+    ];
+
+    const healerSessionCount = await Session.countDocuments({ user_id: healerId });
+    if (healerSessionCount === 0) {
+      await Session.insertMany(healerSessions);
+      console.log('Default healer session created.');
+    } else {
+      console.log('Healer already has sessions; skipping default seed.');
+    }
+
+    const adminSessionCount = await Session.countDocuments({ user_id: adminId });
+    if (adminSessionCount === 0) {
+      await Session.insertMany(adminSessions);
+      console.log('Default admin session created.');
+    } else {
+      console.log('Admin already has sessions; skipping default seed.');
+    }
 
     const nurturingData = [
       { 

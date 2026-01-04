@@ -1,0 +1,8 @@
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/obj/Debug/netcoreapp3.1/HealingRays.Api.csproj.AssemblyReference.cache
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/obj/Debug/netcoreapp3.1/HealingRays.Api.GeneratedMSBuildEditorConfig.editorconfig
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/obj/Debug/netcoreapp3.1/HealingRays.Api.AssemblyInfoInputs.cache
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/obj/Debug/netcoreapp3.1/HealingRays.Api.AssemblyInfo.cs
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/obj/Debug/netcoreapp3.1/HealingRays.Api.csproj.CoreCompileInputs.cache
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/obj/Debug/netcoreapp3.1/HealingRays.Api.MvcApplicationPartsAssemblyInfo.cs
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/obj/Debug/netcoreapp3.1/HealingRays.Api.MvcApplicationPartsAssemblyInfo.cache
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/obj/Debug/netcoreapp3.1/HealingRays.Api.sourcelink.json
