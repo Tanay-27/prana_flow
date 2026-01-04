@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HealingRays.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+77aae217aeda099a5971836552d3c2d10bdd8a17")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+64ee5df66bda409c84197e29a1778465aaa158c8")]
 [assembly: System.Reflection.AssemblyProductAttribute("HealingRays.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HealingRays.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

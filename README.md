@@ -54,18 +54,20 @@ The application uses an **integrated architecture** where .NET Core serves both 
 
 ### Prerequisites
 
-#### Development Machine
+#### Development Machine (Your Local Setup)
 - [Node.js](https://nodejs.org/) (v16 or higher) - for building frontend
-- [.NET Core 3.1 SDK](https://dotnet.microsoft.com/download/dotnet/3.1)
-- [SQL Server LocalDB](https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/sql-server-express-localdb) or SQL Server
+- **Git** - for version control
+- **Text Editor/IDE** - for code editing
 
-#### Production Server (Windows)
+#### Production Server (Windows Server)
 - **Windows Server 2016+**
-- **.NET Core 3.1 Runtime** (ASP.NET Core)
+- **.NET Core 3.1 Runtime** (ASP.NET Core) - installed by deployment scripts
 - **SQL Server** (LocalDB or full instance)
-- **NSSM** (Non-Sucking Service Manager)
+- **NSSM** (Non-Sucking Service Manager) - installed by deployment scripts
 
-### Development Setup
+**Note**: You don't need .NET Core on your development machine! The deployment scripts will install it on the production server.
+
+### Development Setup (No .NET Core Required)
 
 1. **Clone the Repository**:
    ```bash
@@ -73,32 +75,27 @@ The application uses an **integrated architecture** where .NET Core serves both 
    cd healing-rays
    ```
 
-2. **Setup Database**:
-   ```bash
-   # Create database and run migrations
-   cd HealingRays.Api/HealingRays.Api
-   dotnet ef database update
-   ```
-
-3. **Build Frontend**:
+2. **Build Frontend**:
    ```bash
    cd frontend
    npm install
    npm run build
    # Copy build to .NET Core wwwroot
+   mkdir -p ../HealingRays.Api/HealingRays.Api/wwwroot
    cp -r dist/* ../HealingRays.Api/HealingRays.Api/wwwroot/
    ```
 
-4. **Run Application**:
+3. **Commit Built Files**:
    ```bash
-   cd HealingRays.Api/HealingRays.Api
-   dotnet run
+   git add .
+   git commit -m "Add built frontend and .NET Core backend"
+   git push
    ```
 
-5. **Access Application**:
-   - Frontend: http://localhost:5000/
-   - API: http://localhost:5000/api/
-   - Swagger: http://localhost:5000/swagger/
+4. **Database Seeding (Manual)**:
+   - Use the SQL script: `setup/dotnet/manual_seed.sql`
+   - Run in SQL Server Management Studio or any SQL client
+   - Creates default users: admin/Admin@123, healer/Healer@123
 
 ### Production Deployment
 
@@ -250,6 +247,9 @@ dotnet publish       # Publish for deployment
 # Database operations
 dotnet ef migrations add <name>    # Create migration
 dotnet ef database update         # Apply migrations
+
+# Seed database with sample data
+dotnet run seed                   # Seed database
 ```
 
 ## 🎯 Production Checklist

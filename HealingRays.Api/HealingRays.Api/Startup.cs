@@ -129,6 +129,9 @@ namespace HealingRays.Api
             // Register file service
             services.AddScoped<IFileService, LocalFileService>();
 
+            // Register database seeder
+            services.AddTransient<DatabaseSeeder>();
+
             // Add SPA services for serving React frontend
             services.AddSpaStaticFiles(configuration =>
             {

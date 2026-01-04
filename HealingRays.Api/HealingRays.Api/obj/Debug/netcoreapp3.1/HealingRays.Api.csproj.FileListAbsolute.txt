@@ -79,3 +79,12 @@
 /Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/obj/Debug/netcoreapp3.1/HealingRays.Api.dll
 /Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/obj/Debug/netcoreapp3.1/HealingRays.Api.pdb
 /Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/obj/Debug/netcoreapp3.1/HealingRays.Api.genruntimeconfig.cache
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/bin/Debug/netcoreapp3.1/Microsoft.AspNetCore.NodeServices.dll
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/bin/Debug/netcoreapp3.1/Microsoft.AspNetCore.SpaServices.dll
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/bin/Debug/netcoreapp3.1/Microsoft.AspNetCore.SpaServices.Extensions.dll
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/bin/Debug/netcoreapp3.1/Microsoft.Extensions.FileProviders.Abstractions.dll
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/bin/Debug/netcoreapp3.1/Microsoft.Extensions.FileProviders.Physical.dll
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/bin/Debug/netcoreapp3.1/Microsoft.Extensions.FileSystemGlobbing.dll
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/bin/Debug/netcoreapp3.1/Microsoft.Extensions.Logging.Configuration.dll
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/bin/Debug/netcoreapp3.1/Microsoft.Extensions.Logging.Console.dll
+/Users/tanayshah/Desktop/personal/projects/healing_rays/HealingRays.Api/HealingRays.Api/bin/Debug/netcoreapp3.1/Microsoft.Extensions.Options.ConfigurationExtensions.dll
