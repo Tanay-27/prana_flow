@@ -26,6 +26,24 @@ export class Session {
   @Prop()
   end_time: string;
 
+  @Prop({
+    type: [
+      {
+        from_date: { type: Date, required: true },
+        to_date: { type: Date, required: true },
+        from_time: { type: String, required: true },
+        to_time: { type: String, required: true },
+      },
+    ],
+    default: [],
+  })
+  schedule_slots: {
+    from_date: Date;
+    to_date: Date;
+    from_time: string;
+    to_time: string;
+  }[];
+
   @Prop({ default: 'scheduled' })
   status: string;
 
@@ -34,6 +52,27 @@ export class Session {
 
   @Prop({ default: 0 })
   fee: number;
+
+  @Prop({
+    type: [
+      {
+        path: { type: String, required: true },
+        original_name: { type: String },
+        mime_type: { type: String },
+        size: { type: Number },
+      },
+    ],
+    default: [],
+  })
+  attachments: {
+    path: string;
+    original_name?: string;
+    mime_type?: string;
+    size?: number;
+  }[];
+
+  @Prop({ default: false })
+  self_session: boolean;
 
   @Prop({ default: true })
   is_active: boolean;

@@ -73,6 +73,14 @@ PranaFlow is a premium, specialized practice management system designed specific
    npm run seed
    ```
 
+## 🧰 Windows Deployment Assets
+
+- Production environment variables: `backend/.env.sample` (copy to `.env` and update secrets).
+- Detailed Windows Server 2012 setup plus PowerShell service scripts live in `setup/windows/`.
+  - `setup/windows/windows_deployment.md` – end-to-end installation guide (MongoDB, MinIO, backend, frontend, nginx, NSSM).
+  - `setup/windows/scripts/*.ps1` – reusable helpers for registering and starting backend/frontend/MinIO services.
+  - Designed for bare-metal/VM deployments with a static IP and no Docker support.
+
 ## 📁 Project Structure
 
 ```text

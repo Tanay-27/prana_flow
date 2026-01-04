@@ -17,8 +17,8 @@ interface ClientState {
   clients: Client[];
   loading: boolean;
   fetchClients: () => Promise<void>;
-  addClient: (client: Partial<Client>) => Promise<void>;
-  updateClient: (id: string, client: Partial<Client>) => Promise<void>;
+  addClient: (client: Partial<Client>) => Promise<Client>;
+  updateClient: (id: string, client: Partial<Client>) => Promise<Client>;
   deleteClient: (id: string) => Promise<void>;
 }
 
@@ -35,14 +35,16 @@ export const useClientStore = create<ClientState>((set, get) => ({
     }
   },
   addClient: async (client) => {
-    const response = await api.post('/clients', client);
+    const response = await api.post<Client>('/clients', client);
     set({ clients: [...get().clients, response.data] });
+    return response.data;
   },
   updateClient: async (id, client) => {
-    const response = await api.patch(`/clients/${id}`, client);
+    const response = await api.patch<Client>(`/clients/${id}`, client);
     set({
       clients: get().clients.map((c) => (c._id === id ? response.data : c)),
     });
+    return response.data;
   },
   deleteClient: async (id) => {
     await api.delete(`/clients/${id}`);

@@ -42,4 +42,22 @@ export class StorageService implements OnModuleInit {
   async getFileUrl(fileName: string): Promise<string> {
     return this.minioClient.presignedUrl('GET', this.bucketName, fileName, 24 * 60 * 60);
   }
+
+  async getFilesUrls(fileNames: string[]): Promise<string[]> {
+    if (!fileNames || fileNames.length === 0) return [];
+    return Promise.all(fileNames.map(name => this.getFileUrl(name)));
+  }
+
+  getPathFromUrl(url: string): string {
+    if (!url.includes('?')) return url; // Already a path or clean url
+    try {
+      const parsed = new URL(url);
+      const pathParts = parsed.pathname.split('/');
+      // Pathname is /bucket/folder/file.ext -> we want folder/file.ext
+      // Shift out the first empty part and the bucket name
+      return pathParts.slice(2).join('/');
+    } catch {
+      return url;
+    }
+  }
 }

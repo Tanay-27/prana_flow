@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useProtocolStore } from '../store/protocolStore';
 import type { Protocol } from '../store/protocolStore';
-import { BookOpen, Search, Plus, Tag, FileText, ChevronRight, X, Trash2, Edit2, Paperclip } from 'lucide-react';
+import { BookOpen, Search, Plus, Tag, FileText, ChevronRight, X, Trash2, Edit2, Paperclip, Maximize } from 'lucide-react';
 import api from '../api/client';
 
 const ProtocolsPage: React.FC = () => {
   const { protocols, fetchProtocols, addProtocol, updateProtocol, deleteProtocol, loading } = useProtocolStore();
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilters, setDateFilters] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProtocol, setEditingProtocol] = useState<Protocol | null>(null);
+  const [fullscreenFile, setFullscreenFile] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     notes: '',
@@ -19,8 +21,12 @@ const ProtocolsPage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    fetchProtocols(searchTerm);
-  }, [fetchProtocols, searchTerm]);
+    fetchProtocols(
+      searchTerm || undefined,
+      dateFilters.start || undefined,
+      dateFilters.end || undefined,
+    );
+  }, [fetchProtocols, searchTerm, dateFilters.start, dateFilters.end]);
 
   useEffect(() => {
     if (editingProtocol) {
@@ -36,16 +42,21 @@ const ProtocolsPage: React.FC = () => {
   }, [editingProtocol]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files) return;
 
     setUploading(true);
     const data = new FormData();
-    data.append('file', file);
+    for (let i = 0; i < files.length; i++) {
+      data.append('files', files[i]);
+    }
 
     try {
-      const response = await api.post('/storage/upload', data);
-      setFormData({ ...formData, attachments: [...formData.attachments, response.data.url] });
+      const response = await api.post('/storage/bulk-upload', data);
+      const newPaths = response.data.map((res: any) => res.path);
+      // For immediate preview in modal, we can use URLs, but DB needs paths.
+      // We'll store paths in the formData and resolve them on the backend.
+      setFormData({ ...formData, attachments: [...formData.attachments, ...newPaths] });
     } catch (err) {
       console.error('Upload failed', err);
     } finally {
@@ -85,6 +96,23 @@ const ProtocolsPage: React.FC = () => {
     setFormData({ ...formData, keywords: formData.keywords.filter(k => k !== kw) });
   };
 
+  const filteredProtocols = useMemo(() => {
+    if (!dateFilters.start && !dateFilters.end) return protocols;
+    return protocols.filter((protocol) => {
+      const updated = new Date(protocol.updatedAt);
+      if (Number.isNaN(updated.getTime())) return false;
+      if (dateFilters.start && updated < new Date(dateFilters.start)) return false;
+      if (dateFilters.end) {
+        const endDate = new Date(dateFilters.end);
+        endDate.setHours(23, 59, 59, 999);
+        if (updated > endDate) return false;
+      }
+      return true;
+    });
+  }, [dateFilters.end, dateFilters.start, protocols]);
+
+  const clearDateFilters = () => setDateFilters({ start: '', end: '' });
+
   return (
     <div className="max-w-6xl mx-auto">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
@@ -101,15 +129,40 @@ const ProtocolsPage: React.FC = () => {
         </button>
       </header>
 
-      <div className="mb-8 flex items-center bg-white px-5 py-4 rounded-3xl shadow-sm border border-slate-100 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
-        <Search className="w-5 h-5 text-slate-400 mr-3" />
-        <input 
-          type="text" 
-          placeholder="Search by protocol name or keywords..."
-          className="flex-1 bg-transparent border-none focus:outline-none text-slate-700 font-medium"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      <div className="mb-8 flex flex-col gap-4">
+        <div className="flex items-center bg-white px-5 py-4 rounded-3xl shadow-sm border border-slate-100 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
+          <Search className="w-5 h-5 text-slate-400 mr-3" />
+          <input 
+            type="text" 
+            placeholder="Search by protocol name or keywords..."
+            className="flex-1 bg-transparent border-none focus:outline-none text-slate-700 font-medium"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-3 bg-white px-5 py-3 rounded-3xl border border-slate-100 shadow-sm">
+          <label className="text-xs font-bold uppercase tracking-wide text-slate-400">From</label>
+          <input
+            type="date"
+            value={dateFilters.start}
+            onChange={(e) => setDateFilters((prev) => ({ ...prev, start: e.target.value }))}
+            className="px-4 py-2 rounded-xl border border-slate-200 text-sm"
+          />
+          <label className="text-xs font-bold uppercase tracking-wide text-slate-400">To</label>
+          <input
+            type="date"
+            value={dateFilters.end}
+            onChange={(e) => setDateFilters((prev) => ({ ...prev, end: e.target.value }))}
+            className="px-4 py-2 rounded-xl border border-slate-200 text-sm"
+          />
+          <button
+            type="button"
+            onClick={clearDateFilters}
+            className="ml-auto px-4 py-2 rounded-xl border border-slate-200 text-slate-500 text-sm font-semibold"
+          >
+            Clear
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -118,8 +171,15 @@ const ProtocolsPage: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {protocols.map((protocol) => (
-            <div key={protocol._id} className="group bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-indigo-100/50 hover:border-indigo-200 transition-all flex flex-col">
+          {filteredProtocols.map((protocol) => (
+            <div
+              key={protocol._id}
+              onClick={() => {
+                setEditingProtocol(protocol);
+                setIsModalOpen(true);
+              }}
+              className="group bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-indigo-100/50 hover:border-indigo-200 transition-all flex flex-col cursor-pointer"
+            >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
@@ -132,13 +192,13 @@ const ProtocolsPage: React.FC = () => {
                 </div>
                 <div className="flex gap-1">
                   <button 
-                    onClick={() => { setEditingProtocol(protocol); setIsModalOpen(true); }}
+                    onClick={(e) => { e.stopPropagation(); setEditingProtocol(protocol); setIsModalOpen(true); }}
                     className="p-2 text-slate-400 hover:text-indigo-600 rounded-xl hover:bg-indigo-50 transition-colors"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button 
-                    onClick={() => handleDelete(protocol._id)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(protocol._id); }}
                     className="p-2 text-slate-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -165,7 +225,9 @@ const ProtocolsPage: React.FC = () => {
                   {protocol.attachments?.length || 0} Attachments
                 </div>
                 <button 
-                  onClick={() => {
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
                     if (protocol.attachments && protocol.attachments.length > 0) {
                       window.open(protocol.attachments[0], '_blank');
                     } else {
@@ -251,30 +313,59 @@ const ProtocolsPage: React.FC = () => {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-bold text-slate-700">Attachments</label>
-                  <label className="flex items-center gap-2 text-indigo-600 font-bold text-xs cursor-pointer hover:text-indigo-700">
+                <div className="flex items-center justify-between mb-4">
+                  <label className="block text-sm font-bold text-slate-700">Protocol Attachments</label>
+                  <label className="flex items-center gap-2 text-indigo-600 font-bold text-xs cursor-pointer hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors">
                     <Paperclip className="w-4 h-4" />
-                    Attach File
-                    <input type="file" className="hidden" onChange={handleFileUpload} />
+                    Add Files
+                    <input type="file" multiple className="hidden" onChange={handleFileUpload} />
                   </label>
                 </div>
-                <div className="space-y-2">
-                  {formData.attachments.map((url, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-4 h-4 text-slate-400" />
-                        <span className="text-xs font-medium text-slate-600 truncate max-w-[200px]">{url.split('/').pop()}</span>
+
+                {uploading && (
+                  <div className="flex items-center gap-3 p-4 bg-indigo-50 rounded-2xl border border-dashed border-indigo-200 mb-4">
+                    <div className="animate-spin h-5 w-5 border-b-2 border-indigo-600 rounded-full"></div>
+                    <span className="text-sm font-bold text-indigo-600">Uploading to library...</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-3 gap-3">
+                  {formData.attachments.map((url, i) => {
+                    const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(url);
+                    return (
+                      <div key={i} className="group relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
+                        {isImage ? (
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center p-2 text-slate-400">
+                            <FileText className="w-8 h-8 mb-1" />
+                            <span className="text-[10px] font-bold uppercase truncate w-full text-center">
+                              {url.split('.').pop()}
+                            </span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button 
+                            type="button"
+                            onClick={() => setFullscreenFile(url)}
+                            className="p-2 bg-white/20 hover:bg-white/40 rounded-xl text-white backdrop-blur-md transition-all"
+                          >
+                            <Maximize className="w-5 h-5" />
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => removeAttachment(url)}
+                            className="p-2 bg-red-500/20 hover:bg-red-500/40 rounded-xl text-white backdrop-blur-md transition-all"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
-                      <button type="button" onClick={() => removeAttachment(url)} className="text-slate-400 hover:text-red-600">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                  {uploading && (
-                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-dashed border-indigo-200">
-                       <div className="animate-spin h-4 w-4 border-b-2 border-indigo-600 rounded-full"></div>
-                       <span className="text-xs font-bold text-indigo-600 animate-pulse">Uploading...</span>
+                    );
+                  })}
+                  {(formData.attachments.length === 0) && !uploading && (
+                    <div className="col-span-3 py-8 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl text-sm font-medium">
+                      Store images or reference PDFs here
                     </div>
                   )}
                 </div>
@@ -290,6 +381,54 @@ const ProtocolsPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Fullscreen Viewer Overlay */}
+      {fullscreenFile && (
+        <div className="fixed inset-0 z-[200] bg-slate-900/95 backdrop-blur-xl flex flex-col animate-in fade-in duration-300">
+          <div className="flex justify-end p-6">
+            <button 
+              onClick={() => setFullscreenFile(null)}
+              className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all shadow-xl"
+            >
+              <X className="w-8 h-8" />
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-4 md:p-10 overflow-auto">
+            {/\.(jpg|jpeg|png|webp|gif)$/i.test(fullscreenFile) ? (
+              <img 
+                src={fullscreenFile} 
+                alt="Full preview" 
+                className="max-w-full max-h-full object-contain shadow-2xl rounded-2xl border border-white/10" 
+              />
+            ) : (
+              <div className="bg-white w-full max-w-5xl h-full rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col">
+                <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                   <div className="flex items-center gap-4">
+                      <div className="p-3 bg-indigo-50 rounded-2xl">
+                        <FileText className="w-6 h-6 text-indigo-600" />
+                      </div>
+                      <span className="font-bold text-slate-900 text-lg truncate max-w-md">{fullscreenFile.split('/').pop()}</span>
+                   </div>
+                   <div className="flex gap-3">
+                     <a 
+                      href={fullscreenFile} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all active:scale-95"
+                     >
+                       Download File
+                     </a>
+                   </div>
+                </div>
+                <iframe 
+                  src={fullscreenFile} 
+                  className="w-full flex-1 border-none bg-slate-50"
+                  title="Protocol Attachment"
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

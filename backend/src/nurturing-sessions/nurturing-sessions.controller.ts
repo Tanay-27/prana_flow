@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query } from '@nestjs/common';
 import { NurturingSessionsService } from './nurturing-sessions.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -13,8 +13,14 @@ export class NurturingSessionsController {
   }
 
   @Get()
-  findAll(@Req() req) {
-    return this.service.findAll(req.user._id);
+  findAll(
+    @Req() req,
+    @Query('start') start?: string,
+    @Query('end') end?: string,
+  ) {
+    const startDate = start ? new Date(start) : undefined;
+    const endDate = end ? new Date(end) : undefined;
+    return this.service.findAll(req.user._id, startDate, endDate);
   }
 
   @Patch(':id')

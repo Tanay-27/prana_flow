@@ -29,7 +29,7 @@ const Layout: React.FC = () => {
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { name: 'Clients', icon: Users, path: '/clients' },
-    { name: 'Sessions', icon: Calendar, path: '/sessions' },
+    { name: 'Healing Sessions', icon: Calendar, path: '/sessions' },
     { name: 'Protocols', icon: BookOpen, path: '/protocols' },
     { name: 'Nurturing', icon: Clock, path: '/nurturing' },
     { name: 'Payments', icon: CreditCard, path: '/payments' },

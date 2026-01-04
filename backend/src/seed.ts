@@ -31,25 +31,40 @@ async function seed() {
     const Payment = mongoose.model('Payment', new mongoose.Schema({}, { strict: false }));
     const NurturingSession = mongoose.model('NurturingSession', new mongoose.Schema({}, { strict: false }));
 
-    // 1. Create Healer
+    // 1. Create Admin user
+    const existingAdmin = await User.findOne({ username: 'admin' });
+    if (!existingAdmin) {
+      const adminPassword = await bcrypt.hash('Admin@123', 10);
+      await User.create({
+        username: 'admin',
+        password: adminPassword,
+        role: 'admin',
+        isActive: true,
+      });
+      console.log('Admin created: admin / Admin@123');
+    } else {
+      console.log('Admin already exists.');
+    }
+
+    // 2. Create Healer
     const existingHealer = await User.findOne({ username: 'healer' });
     let healerId;
     if (!existingHealer) {
-      const hashedChildPassword = await bcrypt.hash('healer123', 10);
+      const healerPassword = await bcrypt.hash('Healer@123', 10);
       const healer = await User.create({
         username: 'healer',
-        password: hashedChildPassword,
+        password: healerPassword,
         role: 'healer',
         isActive: true,
       });
       healerId = healer._id;
-      console.log('Healer created: healer / healer123');
+      console.log('Healer created: healer / Healer@123');
     } else {
       healerId = existingHealer._id;
       console.log('Healer already exists.');
     }
 
-    // 2. Create Clients
+    // 3. Create Clients
     const clientsData = [
       { name: 'John Smith', phone: '+91 9876543210', email: 'john@example.com', healer_id: healerId, is_active: true },
       { name: 'Alice Wong', phone: '+1 234567890', email: 'alice@example.com', healer_id: healerId, is_active: true },
@@ -58,7 +73,7 @@ async function seed() {
     const clients = await Client.insertMany(clientsData);
     console.log(`Created ${clients.length} clients.`);
 
-    // 3. Create Protocols
+    // 4. Create Protocols
     const protocolsData = [
       { name: 'General Cleansing', keywords: ['cleansing', 'aura'], notes: 'Standard protocol for energy maintenance.', healer_id: healerId, is_active: true },
       { name: 'Stress Relief', keywords: ['stress', 'relaxation'], notes: 'Focus on solar plexus and heart.', healer_id: healerId, is_active: true },
@@ -66,7 +81,7 @@ async function seed() {
     const protocols = await Protocol.insertMany(protocolsData);
     console.log(`Created ${protocols.length} protocols.`);
 
-    // 4. Create Sessions
+    // 5. Create Sessions
     const sessionsData = [
       { 
         type: 'healing', 
@@ -94,7 +109,7 @@ async function seed() {
     await NurturingSession.insertMany(nurturingData);
     console.log('Created sample sessions and nurturing sessions.');
 
-    // 5. Create Payments
+    // 6. Create Payments
     const paymentsData = [
       {
         client_id: clients[0]._id,

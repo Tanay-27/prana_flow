@@ -47,7 +47,14 @@ export class SessionsController {
   }
 
   @Get('client/:clientId')
-  findByClient(@Req() req, @Param('clientId') clientId: string) {
-    return this.sessionsService.findByClient(req.user._id, clientId);
+  findByClient(
+    @Req() req,
+    @Param('clientId') clientId: string,
+    @Query('start') start?: string,
+    @Query('end') end?: string,
+  ) {
+    const startDate = start ? new Date(start) : undefined;
+    const endDate = end ? new Date(end) : undefined;
+    return this.sessionsService.findByClient(req.user._id, clientId, startDate, endDate);
   }
 }

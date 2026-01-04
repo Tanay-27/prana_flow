@@ -1,6 +1,21 @@
 import { create } from 'zustand';
 import api from '../api/client';
 
+export interface NurturingAttachment {
+  path: string;
+  url?: string;
+  original_name?: string;
+  mime_type?: string;
+  size?: number;
+}
+
+export interface NurturingScheduleSlot {
+  from_date: string;
+  to_date: string;
+  from_time: string;
+  to_time: string;
+}
+
 export interface NurturingSession {
   _id: string;
   name: string;
@@ -9,13 +24,14 @@ export interface NurturingSession {
   payment_details?: string;
   status: 'Planned' | 'Registered' | 'Attended';
   recording_available_till?: string;
-  attachments: string[];
+  schedule_slots?: NurturingScheduleSlot[];
+  attachments: NurturingAttachment[];
 }
 
 interface NurturingState {
   nurturingSessions: NurturingSession[];
   loading: boolean;
-  fetchNurturing: () => Promise<void>;
+  fetchNurturing: (filters?: { start?: string; end?: string }) => Promise<void>;
   addNurturing: (session: Partial<NurturingSession>) => Promise<void>;
   updateNurturing: (id: string, session: Partial<NurturingSession>) => Promise<void>;
   deleteNurturing: (id: string) => Promise<void>;
@@ -24,10 +40,10 @@ interface NurturingState {
 export const useNurturingStore = create<NurturingState>((set, get) => ({
   nurturingSessions: [],
   loading: false,
-  fetchNurturing: async () => {
+  fetchNurturing: async (filters) => {
     set({ loading: true });
     try {
-      const response = await api.get('/nurturing-sessions');
+      const response = await api.get('/nurturing-sessions', { params: filters });
       set({ nurturingSessions: response.data });
     } finally {
       set({ loading: false });

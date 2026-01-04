@@ -13,8 +13,15 @@ export class ProtocolsController {
   }
 
   @Get()
-  findAll(@Req() req, @Query('search') search?: string) {
-    return this.service.findAll(req.user._id, search);
+  findAll(
+    @Req() req,
+    @Query('search') search?: string,
+    @Query('start') start?: string,
+    @Query('end') end?: string,
+  ) {
+    const startDate = start ? new Date(start) : undefined;
+    const endDate = end ? new Date(end) : undefined;
+    return this.service.findAll(req.user._id, search, startDate, endDate);
   }
 
   @Get(':id')

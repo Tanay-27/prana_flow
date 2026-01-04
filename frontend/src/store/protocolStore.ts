@@ -13,7 +13,7 @@ export interface Protocol {
 interface ProtocolState {
   protocols: Protocol[];
   loading: boolean;
-  fetchProtocols: (search?: string) => Promise<void>;
+  fetchProtocols: (search?: string, start?: string, end?: string) => Promise<void>;
   addProtocol: (protocol: Partial<Protocol>) => Promise<void>;
   updateProtocol: (id: string, protocol: Partial<Protocol>) => Promise<void>;
   deleteProtocol: (id: string) => Promise<void>;
@@ -22,10 +22,10 @@ interface ProtocolState {
 export const useProtocolStore = create<ProtocolState>((set, get) => ({
   protocols: [],
   loading: false,
-  fetchProtocols: async (search) => {
+  fetchProtocols: async (search, start, end) => {
     set({ loading: true });
     try {
-      const response = await api.get('/protocols', { params: { search } });
+      const response = await api.get('/protocols', { params: { search, start, end } });
       set({ protocols: response.data });
     } finally {
       set({ loading: false });

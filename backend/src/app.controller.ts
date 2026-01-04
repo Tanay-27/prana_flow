@@ -56,13 +56,21 @@ export class AppController {
     @Query('end') end?: string,
     @Query('type') type?: 'healing' | 'nurturing' | 'all',
     @Query('status') status?: string,
+    @Query('search') search?: string,
   ) {
     const userId = req.user._id;
-    const startDate = start ? new Date(start) : new Date();
-    if (!start) startDate.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const startDate = start ? new Date(start) : new Date(now);
+    if (!start) {
+      startDate.setDate(now.getDate() - 30);
+      startDate.setHours(0, 0, 0, 0);
+    }
     
-    const endDate = end ? new Date(end) : new Date(startDate);
-    if (!end) endDate.setDate(endDate.getDate() + 7);
+    const endDate = end ? new Date(end) : new Date(now);
+    if (!end) {
+      endDate.setDate(now.getDate() + 14);
+      endDate.setHours(23, 59, 59, 999);
+    }
 
     let sessions: any[] = [];
     let nurturing: any[] = [];
@@ -79,6 +87,14 @@ export class AppController {
 
     if (status) {
       agenda = agenda.filter(item => item.status === status);
+    }
+
+    if (search) {
+      const lowered = search.trim().toLowerCase();
+      agenda = agenda.filter((item) => {
+        const composed = `${item.name || ''} ${item.client_id?.name || ''} ${item.notes || ''}`.toLowerCase();
+        return composed.includes(lowered);
+      });
     }
 
     return agenda.sort((a, b) => {

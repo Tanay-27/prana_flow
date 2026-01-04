@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { useClientStore } from '../store/clientStore';
+import { useSessionStore } from '../store/sessionStore';
 import type { Client } from '../store/clientStore';
-import { User, Phone, Mail, Plus, Search, ExternalLink, X, Camera, Trash2 } from 'lucide-react';
+import { User, Phone, Mail, Plus, Search, ExternalLink, X, Camera, Trash2, Clock, FileText } from 'lucide-react';
 import api from '../api/client';
 
 const ClientsPage: React.FC = () => {
@@ -74,7 +75,28 @@ const ClientsPage: React.FC = () => {
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientHistory, setClientHistory] = useState<any[]>([]);
   const [newNote, setNewNote] = useState('');
+  const { fetchSessionHistory } = useSessionStore();
+  const [historyFilters, setHistoryFilters] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [historyInputs, setHistoryInputs] = useState<{ start: string; end: string }>({ start: '', end: '' });
+
+  useEffect(() => {
+    if (selectedClient?._id && isProfileOpen) {
+      fetchSessionHistory(selectedClient._id, historyFilters.start || undefined, historyFilters.end || undefined).then(setClientHistory);
+    } else {
+      setClientHistory([]);
+    }
+  }, [selectedClient, isProfileOpen, fetchSessionHistory, historyFilters.start, historyFilters.end]);
+
+  const applyHistoryFilter = () => {
+    setHistoryFilters({ ...historyInputs });
+  };
+
+  const resetHistoryFilter = () => {
+    setHistoryInputs({ start: '', end: '' });
+    setHistoryFilters({ start: '', end: '' });
+  };
 
   const handleDelete = async (client: Client) => {
     const noteCount = client.notes?.length || 0;
@@ -312,6 +334,52 @@ const ClientsPage: React.FC = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 space-y-8">
+              {/* Stats / Quick Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Sessions</p>
+                  <p className="text-xl font-bold text-slate-900">{clientHistory.length}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Completed</p>
+                  <p className="text-xl font-bold text-green-600">
+                    {clientHistory.filter((s) => s.status === 'completed').length}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Filter Session History</p>
+                <div className="flex flex-col gap-3 md:flex-row">
+                  <input
+                    type="date"
+                    value={historyInputs.start}
+                    onChange={(e) => setHistoryInputs((prev) => ({ ...prev, start: e.target.value }))}
+                    className="w-full px-5 py-3 bg-white border border-slate-200 rounded-2xl outline-none font-medium text-slate-900 focus:ring-2 focus:ring-teal-500/20"
+                  />
+                  <input
+                    type="date"
+                    value={historyInputs.end}
+                    onChange={(e) => setHistoryInputs((prev) => ({ ...prev, end: e.target.value }))}
+                    className="w-full px-5 py-3 bg-white border border-slate-200 rounded-2xl outline-none font-medium text-slate-900 focus:ring-2 focus:ring-teal-500/20"
+                  />
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={applyHistoryFilter}
+                    className="px-5 py-2 bg-teal-600 text-white rounded-xl text-sm font-semibold"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={resetHistoryFilter}
+                    className="px-5 py-2 bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+
               {/* Add Note Section */}
               <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
                 <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -333,12 +401,53 @@ const ClientsPage: React.FC = () => {
                 </form>
               </div>
 
-              {/* Notes Timeline */}
-              <div className="space-y-6">
-                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Timeline</h3>
-                 {selectedClient.notes?.length === 0 ? (
-                   <div className="text-center py-10 text-slate-400 italic text-sm">No notes yet.</div>
-                 ) : (
+              {/* Session History */}
+               <div className="space-y-6">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1 text-teal-600">Session History</h3>
+                  {clientHistory.length === 0 ? (
+                    <div className="text-center py-10 text-slate-400 italic text-sm bg-slate-50 rounded-2xl border border-dashed border-slate-200">No sessions recorded yet.</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {clientHistory.slice(0, 10).map((session) => (
+                        <div key={session._id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:border-teal-200 transition-all group">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <p className="text-sm font-bold text-slate-900">
+                                {format(new Date(session.scheduled_date || session.date), 'MMM dd, yyyy')}
+                              </p>
+                              <p className="text-[10px] font-medium text-slate-500 uppercase flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {session.start_time || 'N/A'}
+                              </p>
+                            </div>
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase ${session.status === 'completed' ? 'text-green-600 bg-green-50/50' : 'text-amber-600 bg-amber-50/50'}`}>
+                              {session.status}
+                            </span>
+                          </div>
+                   
+                          {session.attachments?.length > 0 && (
+                            <div className="flex items-center gap-1 mt-2">
+                              <FileText className="w-3 h-3 text-teal-400" />
+                              <span className="text-[9px] font-bold text-teal-600 uppercase">
+                                {session.attachments.length} Attachment{session.attachments.length > 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {clientHistory.length > 10 && (
+                        <p className="text-center text-[10px] font-bold text-slate-400 uppercase py-2">Showing last 10 sessions</p>
+                      )}
+                    </div>
+                  )}
+               </div>
+
+               {/* Notes Timeline */}
+               <div className="space-y-6">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Timeline Notes</h3>
+                  {selectedClient.notes?.length === 0 ? (
+                    <div className="text-center py-10 text-slate-400 italic text-sm">No notes yet.</div>
+                  ) : (
                    <div className="space-y-6">
                      {[...selectedClient.notes].reverse().map((note, i) => (
                        <div key={i} className="relative pl-6 border-l-2 border-slate-100 pb-1">
